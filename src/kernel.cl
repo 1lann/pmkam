@@ -150,7 +150,7 @@ inline void digest64(UINT m[64], UINT H[8]) {
                           // A max chain iter of n means a failure probability of at most (7/9)^n per address checked.
 
 // precomputed message block conversions for sha256(hex)
-__constant ushort DATA_TO_HEX_TO_M[256] = {
+__shared ushort DATA_TO_HEX_TO_M[256] = {
 	12336, 12337, 12338, 12339, 12340, 12341, 12342, 12343, 12344, 12345, 12385, 12386,
 	12387, 12388, 12389, 12390, 12592, 12593, 12594, 12595, 12596, 12597, 12598, 12599,
 	12600, 12601, 12641, 12642, 12643, 12644, 12645, 12646, 12848, 12849, 12850, 12851,
