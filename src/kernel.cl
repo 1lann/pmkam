@@ -98,14 +98,14 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 
 // params: raw data whose length must be exactly 32 bytes, and output H
 // what it does: sha256_transform(sha256_transform(hex(data)))
-void sha256_digest_transform(uchar data[32], UINT H[8]) {
+void sha256_digest_transform(UINT data[8], UINT H[8]) {
 	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
 
-#pragma unrollUNIT
+#pragma unroll
 	for (i = 0; i < 16; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-		m[i] = upsample(DATA_TO_HEX_TO_M[data[i * 2]], DATA_TO_HEX_TO_M[data[i * 2 + 1]]);
+        m[i] = upsample(upsample(UINT_BYTE_BE(data[i >> 1], 0), UINT_BYTE_BE(data[i >> 1], 1)), upsample(UINT_BYTE_BE(data[i >> 1], 2), UINT_BYTE_BE(data[i >> 1], 3)));
 	}
 
 #pragma unroll
@@ -414,7 +414,6 @@ typedef struct HASH_CHAIN_T {
 //   protein buffer.
 // - Writes the first 8 bytes from last_hash to the chain buffer.
 inline void shift_chain(HASH_CHAIN_T *chain) {
-    UINT hash_hex[64];
     digest_wrapper(chain->last_hash, chain->last_hash);
 
     chain->protein[chain->protein_start] = make_address_byte_s(
