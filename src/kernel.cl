@@ -162,7 +162,7 @@ void sha256_digest_transform(uchar data[32], UINT H[8]) {
 
 #pragma unroll
 	for (i = 0; i < 64; i++) {
-		t1 = h + EP1(e) + CH(e, f, g) + K[i] + STATICM[i];
+		t1 = h + EP1(e) + CH(e, f, g) + K2[i];
 		t2 = EP0(a) + MAJ(a, b, c);
 		h = g;
 		g = f;
@@ -320,7 +320,7 @@ inline void digest64(UINT data[64], UINT hash[8]) {
     sha256_transform2(hash);
 }
 
-void sha256_finish(UINT H[8], uchar hash[32]) {
+inline void sha256_finish(UINT H[8], uchar hash[32]) {
 	int i, l;
 
 #pragma unroll
@@ -337,7 +337,7 @@ void sha256_finish(UINT H[8], uchar hash[32]) {
 	}
 }
 
-void digest_wrapper(UINT data[8], UINT hash[8]) {
+inline void digest_wrapper(UINT data[8], UINT hash[8]) {
     uchar output[32];
 
     sha256_finish(data, output);
