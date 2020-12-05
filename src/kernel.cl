@@ -99,10 +99,10 @@ __constant uint DATA_TO_HEX_TO_M[256] = {
 // params: raw data whose length must be exactly 32 bytes, and output H
 // what it does: sha256_transform(sha256_transform(hex(data)))
 inline void sha256_digest_transform(UINT H[8]) {
-	uint t1, t2, m[64];
+	uint t1, t2, i, m[64];
 
 #pragma unroll
-	for (int i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
         m[i * 2] = (DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 0)] << 16) | DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 1)];
