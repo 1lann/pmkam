@@ -339,14 +339,12 @@ inline void sha256_finish(UINT H[8], uchar hash[32]) {
 }
 
 inline void digest_wrapper(UINT data[8], UINT hash[8]) {
-    UINT cp[8];
-
     sha256_digest_transform(data, hash);
 }
 
 // Address miner
 
-#define THREAD_ITER 4096 // How many addresses each work unit checks
+#define THREAD_ITER 16384 // How many addresses each work unit checks
 #define CHAIN_SIZE (16 * 8) // 16 stored iterations with 8 bytes each
 #define MAX_CHAIN_ITER 16 // The max amout of iterations the check_address function does before giving up.
                           // Must not be greater than CHAIN_SIZE / 8. (otherwise false positives will happen without any other benefit).
