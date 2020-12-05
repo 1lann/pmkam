@@ -17,11 +17,18 @@ typedef union UINT {
     #define UINT_BYTE_BE(U, I) ((U).c[(I)])
 #endif
 
-
 // right rotate macro
 #define RR(x, y) rotate((uint)(x), -((uint)(y)))
 
-// initial hash values
+// sha256 macros
+#define CH(x, y, z) bitselect((z), (y), (x))
+#define MAJ(x, y, z) bitselect((x), (y), (z) ^ (x))
+#define EP0(x) (RR((x), 2) ^ RR((x), 13) ^ RR((x), 22))
+#define EP1(x) (RR((x), 6) ^ RR((x), 11) ^ RR((x), 25))
+#define SIG0(x) (RR((x), 7) ^ RR((x), 18) ^ ((x) >> 3))
+#define SIG1(x) (RR((x), 17) ^ RR((x), 19) ^ ((x) >> 10))
+
+// sha256 initial hash values
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
 #define H2 0x3c6ef372
@@ -31,24 +38,20 @@ typedef union UINT {
 #define H6 0x1f83d9ab
 #define H7 0x5be0cd19
 
-// sha256 macros
-#define CH(x,y,z) bitselect((z),(y),(x))
-#define MAJ(x,y,z) bitselect((x),(y),(z)^(x))
-#define EP0(x) (RR((x),2) ^ RR((x),13) ^ RR((x),22))
-#define EP1(x) (RR((x),6) ^ RR((x),11) ^ RR((x),25))
-#define SIG0(x) (RR((x),7) ^ RR((x),18) ^ ((x) >> 3))
-#define SIG1(x) (RR((x),17) ^ RR((x),19) ^ ((x) >> 10))
-
+// sha256 round constants
 __constant uint K[64] = {
-	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-	0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-	0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-	0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-	0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-	0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+};
 
+// sha256 round constants added to a precomputed schedule of
+// the second block from a 64-byte message
 __constant uint K2[64] = {
     0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf374,
@@ -60,16 +63,91 @@ __constant uint K2[64] = {
     0xc39c91f2, 0x9eccabbd, 0xb5c9a0e6, 0x532fb63c, 0xd2c741c6, 0x07237ea3, 0xa4954b68, 0x4c191d76
 };
 
-// precomputed message block for second transformation round in second sha256 for sha256(sha256(x))
-__constant uint STATICM[64] = {
-	2147483648, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 512,
-	2147483648, 20971520, 2117632, 20616, 570427392, 575995924, 84449090,
-	2684354592, 1518862336, 6067200, 1496221, 4202700544, 3543279056,
-	291985753, 4142317530, 3003913545, 145928272, 2642168871, 216179603, 2296832490,
-	2771075893, 1738633033, 3610378607, 1324035729, 1572820453, 2397971253, 3803995842,
-	2822718356, 1168996599, 921948365, 3650881000, 2958106055, 1773959876, 3172022107,
-	3820646885, 991993842, 419360279, 3797604839, 322392134, 85264541, 1326255876,
-	640108622, 822159570, 3328750644, 1107837388, 1657999800, 3852183409, 2242356356 };
+// perform a single round of sha256 transformation on the given data
+inline void digest64(UINT m[64], UINT H[8]) {
+    int i;
+    uint a, b, c, d, e, f, g, h, t1, t2;
+
+#pragma unroll
+    for (i = 16; i < 64; i++) {
+        m[i].i = SIG1(m[i - 2].i)
+            + m[i - 7].i
+            + SIG0(m[i - 15].i)
+            + m[i - 16].i;
+    }
+
+    a = H0;
+    b = H1;
+    c = H2;
+    d = H3;
+    e = H4;
+    f = H5;
+    g = H6;
+    h = H7;
+
+#pragma unroll
+    for (i = 0; i < 64; i++) {
+        t1 = h + EP1(e) + CH(e, f, g) + K[i] + m[i].i;
+        t2 = EP0(a) + MAJ(a, b, c);
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
+    }
+
+    a += H0;
+    b += H1;
+    c += H2;
+    d += H3;
+    e += H4;
+    f += H5;
+    g += H6;
+    h += H7;
+
+    H[0].i = a;
+    H[1].i = b;
+    H[2].i = c;
+    H[3].i = d;
+    H[4].i = e;
+    H[5].i = f;
+    H[6].i = g;
+    H[7].i = h;
+
+#pragma unroll
+    for (i = 0; i < 64; i++) {
+        t1 = h + EP1(e) + CH(e, f, g) + K2[i];
+        t2 = EP0(a) + MAJ(a, b, c);
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
+    }
+
+    H[0].i += a;
+    H[1].i += b;
+    H[2].i += c;
+    H[3].i += d;
+    H[4].i += e;
+    H[5].i += f;
+    H[6].i += g;
+    H[7].i += h;
+}
+
+// Address miner
+
+#define THREAD_ITER 4096 // How many addresses each work unit checks
+#define CHAIN_SIZE (16 * 8) // 16 stored iterations with 8 bytes each
+#define MAX_CHAIN_ITER 16 // The max amout of iterations the check_address function does before giving up.
+                          // Must not be greater than CHAIN_SIZE / 8. (otherwise false positives will happen without any other benefit).
+                          // A max chain iter of n means a failure probability of at most (7/9)^n per address checked.
 
 // precomputed message block conversions for sha256(hex)
 __constant ushort DATA_TO_HEX_TO_M[256] = {
@@ -96,255 +174,44 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 	26160, 26161, 26162, 26163, 26164, 26165, 26166, 26167, 26168, 26169, 26209, 26210,
 	26211, 26212, 26213, 26214 };
 
-// params: raw data whose length must be exactly 32 bytes, and output H
-// what it does: sha256_transform(sha256_transform(hex(data)))
-inline void sha256_digest_transform(UINT H[8]) {
-	uint t1, t2, i, m[64];
-
+// Converts a sha256 hash to hexadecimal
+inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
 #pragma unroll
 	for (i = 0; i < 8; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-        m[i * 2] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 1)]);
-        m[i * 2 + 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 3)]);
+        hex[i * 2] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
+        hex[i * 2 + 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
 	}
 
-#pragma unroll
-	for (i = 16; i < 64; i++) {
-		m[i] = SIG1(m[i-2]) + m[i-7] + SIG0(m[i-15]) + m[i-16];
-	}
+    // for (int i = 0; i < 16; i += 2) {
+    //     uchar h, h1, h2;
 
-	uint a = H0;
-	uint b = H1;
-	uint c = H2;
-	uint d = H3;
-	uint e = H4;
-	uint f = H5;
-	uint g = H6;
-	uint h = H7;
+    //     h = UINT_BYTE_BE(hash[i / 2], 0);
+    //     h1 = h % 16;
+    //     h2 = h / 16;
+    //     UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+    //     UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-#pragma unroll
-	for (i = 0; i < 64; i++) {
-		t1 = h + EP1(e) + CH(e, f, g) + K[i] + m[i];
-		t2 = EP0(a) + MAJ(a, b, c);
-		h = g;
-		g = f;
-		f = e;
-		e = d + t1;
-		d = c;
-		c = b;
-		b = a;
-		a = t1 + t2;
-	}
+    //     h = UINT_BYTE_BE(hash[i / 2], 1);
+    //     h1 = h % 16;
+    //     h2 = h / 16;
+    //     UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+    //     UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-	a += H0;
-	b += H1;
-	c += H2;
-	d += H3;
-	e += H4;
-	f += H5;
-	g += H6;
-	h += H7;
+    //     h = UINT_BYTE_BE(hash[i / 2], 2);
+    //     h1 = h % 16;
+    //     h2 = h / 16;
+    //     UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+    //     UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-	H[0].i = a;
-	H[1].i = b;
-	H[2].i = c;
-	H[3].i = d;
-	H[4].i = e;
-	H[5].i = f;
-	H[6].i = g;
-	H[7].i = h;
-
-	// Typically you return here.
-	// However since the input is virtually 64 bytes, there is a second
-	// transform. We flatten the implementation of this second transform,
-	// also since the second 64-chunk of data is identical,
-	// we can pre-compute the M values, which is what STATICM contains.
-
-#pragma unroll
-	for (i = 0; i < 64; i++) {
-		t1 = h + EP1(e) + CH(e, f, g) + K2[i];
-		t2 = EP0(a) + MAJ(a, b, c);
-		h = g;
-		g = f;
-		f = e;
-		e = d + t1;
-		d = c;
-		c = b;
-		b = a;
-		a = t1 + t2;
-	}
-
-	H[0].i += a;
-	H[1].i += b;
-	H[2].i += c;
-	H[3].i += d;
-	H[4].i += e;
-	H[5].i += f;
-	H[6].i += g;
-	H[7].i += h;
+    //     h = UINT_BYTE_BE(hash[i / 2], 3);
+    //     h1 = h % 16;
+    //     h2 = h / 16;
+    //     UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+    //     UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+    // }
 }
-
-// perform a single round of sha256 transformation on the given data
-inline void sha256_transform(UINT m[64], UINT H[8]) {
-    int i;
-    uint a, b, c, d, e, f, g, h, t1, t2;
-
-#pragma unroll
-    for (i = 16; i < 64; i++) {
-        m[i].i = SIG1(m[i - 2].i)
-            + m[i - 7].i
-            + SIG0(m[i - 15].i)
-            + m[i - 16].i;
-    }
-
-    a = H[0].i;
-    b = H[1].i;
-    c = H[2].i;
-    d = H[3].i;
-    e = H[4].i;
-    f = H[5].i;
-    g = H[6].i;
-    h = H[7].i;
-
-#pragma unroll
-    for (i = 0; i < 64; i++) {
-        t1 = h + EP1(e) + CH(e, f, g) + K[i] + m[i].i;
-        t2 = EP0(a) + MAJ(a, b, c);
-        h = g;
-        g = f;
-        f = e;
-        e = d + t1;
-        d = c;
-        c = b;
-        b = a;
-        a = t1 + t2;
-    }
-
-    H[0].i += a;
-    H[1].i += b;
-    H[2].i += c;
-    H[3].i += d;
-    H[4].i += e;
-    H[5].i += f;
-    H[6].i += g;
-    H[7].i += h;
-}
-
-// perform a single round of sha256 transformation on the second block of a
-// 64-byte message
-inline void sha256_transform2(UINT H[8]) {
-    int i;
-    uint a, b, c, d, e, f, g, h, t1, t2;
-
-    a = H[0].i;
-    b = H[1].i;
-    c = H[2].i;
-    d = H[3].i;
-    e = H[4].i;
-    f = H[5].i;
-    g = H[6].i;
-    h = H[7].i;
-
-#pragma unroll
-    for (i = 0; i < 64; i++) {
-        t1 = h + EP1(e) + CH(e, f, g) + K2[i];
-        t2 = EP0(a) + MAJ(a, b, c);
-        h = g;
-        g = f;
-        f = e;
-        e = d + t1;
-        d = c;
-        c = b;
-        b = a;
-        a = t1 + t2;
-    }
-
-    H[0].i += a;
-    H[1].i += b;
-    H[2].i += c;
-    H[3].i += d;
-    H[4].i += e;
-    H[5].i += f;
-    H[6].i += g;
-    H[7].i += h;
-}
-
-inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
-#pragma unroll
-    for (int i = 0; i < 16; i += 2) {
-        uchar h, h1, h2;
-
-        h = UINT_BYTE_BE(hash[i / 2], 0);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 1);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 2);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 3);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-    }
-}
-
-// sha256 digest of exactly 64 bytes of input
-// UINT data[64] - input bytes - will be modified
-// UINT hash[8] - output bytes - will be modified
-// TODO: Check all comments before release
-inline void digest64(UINT data[64], UINT hash[8]) {
-    // init hash state
-    hash[0].i = H0;
-    hash[1].i = H1;
-    hash[2].i = H2;
-    hash[3].i = H3;
-    hash[4].i = H4;
-    hash[5].i = H5;
-    hash[6].i = H6;
-    hash[7].i = H7;
-
-    // transform twice
-    sha256_transform(data, hash);
-    sha256_transform2(hash);
-}
-
-inline void sha256_finish(UINT H[8], uchar hash[32]) {
-	int i, l;
-
-#pragma unroll
-	for (i = 0; i < 4; i++) {
-		l = 24 - i * 8;
-		hash[i]      = (H[0].i >> l) & 0x000000ff;
-		hash[i + 4]  = (H[1].i >> l) & 0x000000ff;
-		hash[i + 8]  = (H[2].i >> l) & 0x000000ff;
-		hash[i + 12] = (H[3].i >> l) & 0x000000ff;
-		hash[i + 16] = (H[4].i >> l) & 0x000000ff;
-		hash[i + 20] = (H[5].i >> l) & 0x000000ff;
-		hash[i + 24] = (H[6].i >> l) & 0x000000ff;
-		hash[i + 28] = (H[7].i >> l) & 0x000000ff;
-	}
-}
-
-// Address miner
-
-#define THREAD_ITER 4096 // How many addresses each work unit checks
-#define CHAIN_SIZE (16 * 8) // 16 stored iterations with 8 bytes each
-#define MAX_CHAIN_ITER 16 // The max amout of iterations the check_address function does before giving up.
-                          // Must not be greater than CHAIN_SIZE / 8. (otherwise false positives will happen without any other benefit).
-                          // A max chain iter of n means a failure probability of at most (7/9)^n per address checked.
 
 // Converts a byte to the one used by the trie
 // byte | krist | trie_char
@@ -397,8 +264,10 @@ typedef struct HASH_CHAIN_T {
 // - Writes the address byte from the first byte from the chain buffer to the
 //   protein buffer.
 // - Writes the first 8 bytes from last_hash to the chain buffer.
-void shift_chain(HASH_CHAIN_T *chain) {
-    sha256_digest_transform(chain->last_hash);
+inline void shift_chain(HASH_CHAIN_T *chain) {
+    UINT hash_hex[64];
+    hash_to_hex(chain->last_hash, hash_hex);
+    digest64(hash_hex, chain->last_hash);
 
     chain->protein[chain->protein_start] = make_address_byte_s(
         chain->chain[chain->chain_start]
@@ -501,7 +370,6 @@ __kernel void mine(
     seed[5].i = nonce_seed / UINT_MAX;
 
     UINT seed_hash[8];
-
     digest64(seed, seed_hash);
 
     // Make chain and protein
