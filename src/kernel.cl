@@ -102,12 +102,11 @@ inline void sha256_digest_transform(UINT data[8], UINT H[8]) {
 	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
 
 #pragma unroll
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < 8; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-        m[i] = upsample(
-            DATA_TO_HEX_TO_M[upsample(UINT_BYTE_BE(data[i >> 1], 0), UINT_BYTE_BE(data[i >> 1], 1))],
-            DATA_TO_HEX_TO_M[upsample(UINT_BYTE_BE(data[i >> 1], 2), UINT_BYTE_BE(data[i >> 1], 3))]);
+        m[i << 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 1)]);
+        m[(i << 1) | 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 3)]);
 	}
 
 #pragma unroll
