@@ -72,7 +72,7 @@ __constant uint STATICM[64] = {
 	640108622, 822159570, 3328750644, 1107837388, 1657999800, 3852183409, 2242356356 };
 
 // precomputed message block conversions for sha256(hex)
-__constant ushort DATA_TO_HEX_TO_M[256] = {
+__constant uint DATA_TO_HEX_TO_M[256] = {
 	12336, 12337, 12338, 12339, 12340, 12341, 12342, 12343, 12344, 12345, 12385, 12386,
 	12387, 12388, 12389, 12390, 12592, 12593, 12594, 12595, 12596, 12597, 12598, 12599,
 	12600, 12601, 12641, 12642, 12643, 12644, 12645, 12646, 12848, 12849, 12850, 12851,
@@ -98,15 +98,15 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 
 // params: raw data whose length must be exactly 32 bytes, and output H
 // what it does: sha256_transform(sha256_transform(hex(data)))
-inline void sha256_digest_transform(UINT data[8], UINT H[8]) {
-	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
+inline void sha256_digest_transform(UINT H[8]) {
+	uint t1, t2, m[64];
 
 #pragma unroll
 	for (i = 0; i < 8; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-        m[i << 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 1)]);
-        m[(i << 1) | 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(data[i], 3)]);
+        m[i * 2] = (DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 0)] << 16) | DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 1)];
+        m[i * 2 + 1] = (DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 2)] << 16) | DATA_TO_HEX_TO_M[UINT_BYTE_BE(H[i], 3)];
 	}
 
 #pragma unroll
@@ -114,14 +114,14 @@ inline void sha256_digest_transform(UINT data[8], UINT H[8]) {
 		m[i] = SIG1(m[i-2]) + m[i-7] + SIG0(m[i-15]) + m[i-16];
 	}
 
-	a = H0;
-	b = H1;
-	c = H2;
-	d = H3;
-	e = H4;
-	f = H5;
-	g = H6;
-	h = H7;
+	uint a = H0;
+	uint b = H1;
+	uint c = H2;
+	uint d = H3;
+	uint e = H4;
+	uint f = H5;
+	uint g = H6;
+	uint h = H7;
 
 #pragma unroll
 	for (i = 0; i < 64; i++) {
@@ -338,10 +338,6 @@ inline void sha256_finish(UINT H[8], uchar hash[32]) {
 	}
 }
 
-inline void digest_wrapper(UINT data[8], UINT hash[8]) {
-    sha256_digest_transform(data, hash);
-}
-
 // Address miner
 
 #define THREAD_ITER 4096 // How many addresses each work unit checks
@@ -402,7 +398,7 @@ typedef struct HASH_CHAIN_T {
 //   protein buffer.
 // - Writes the first 8 bytes from last_hash to the chain buffer.
 inline void shift_chain(HASH_CHAIN_T *chain) {
-    digest_wrapper(chain->last_hash, chain->last_hash);
+    sha256_digest_transform(chain->last_hash);
 
     chain->protein[chain->protein_start] = make_address_byte_s(
         chain->chain[chain->chain_start]
