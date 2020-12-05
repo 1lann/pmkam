@@ -127,14 +127,14 @@ void sha256_digest_transform(uchar data[32], UINT H[8]) {
 	g += H6;
 	h += H7;
 
-	H[0] = a;
-	H[1] = b;
-	H[2] = c;
-	H[3] = d;
-	H[4] = e;
-	H[5] = f;
-	H[6] = g;
-	H[7] = h;
+	H[0].i = a;
+	H[1].i = b;
+	H[2].i = c;
+	H[3].i = d;
+	H[4].i = e;
+	H[5].i = f;
+	H[6].i = g;
+	H[7].i = h;
 
 	// Typically you return here.
 	// However since the input is virtually 64 bytes, there is a second
@@ -156,14 +156,14 @@ void sha256_digest_transform(uchar data[32], UINT H[8]) {
 		a = t1 + t2;
 	}
 
-	H[0] += a;
-	H[1] += b;
-	H[2] += c;
-	H[3] += d;
-	H[4] += e;
-	H[5] += f;
-	H[6] += g;
-	H[7] += h;
+	H[0].i += a;
+	H[1].i += b;
+	H[2].i += c;
+	H[3].i += d;
+	H[4].i += e;
+	H[5].i += f;
+	H[6].i += g;
+	H[7].i += h;
 }
 
 // perform a single round of sha256 transformation on the given data
@@ -277,14 +277,14 @@ void sha256_finish(UINT H[8], uchar hash[32]) {
 #pragma unroll
 	for (i = 0; i < 4; i++) {
 		l = 24 - i * 8;
-		hash[i]      = (H[0] >> l) & 0x000000ff;
-		hash[i + 4]  = (H[1] >> l) & 0x000000ff;
-		hash[i + 8]  = (H[2] >> l) & 0x000000ff;
-		hash[i + 12] = (H[3] >> l) & 0x000000ff;
-		hash[i + 16] = (H[4] >> l) & 0x000000ff;
-		hash[i + 20] = (H[5] >> l) & 0x000000ff;
-		hash[i + 24] = (H[6] >> l) & 0x000000ff;
-		hash[i + 28] = (H[7] >> l) & 0x000000ff;
+		hash[i].i      = (H[0].i >> l) & 0x000000ff;
+		hash[i + 4].i  = (H[1].i >> l) & 0x000000ff;
+		hash[i + 8].i  = (H[2].i >> l) & 0x000000ff;
+		hash[i + 12].i = (H[3].i >> l) & 0x000000ff;
+		hash[i + 16].i = (H[4].i >> l) & 0x000000ff;
+		hash[i + 20].i = (H[5].i >> l) & 0x000000ff;
+		hash[i + 24].i = (H[6].i >> l) & 0x000000ff;
+		hash[i + 28].i = (H[7].i >> l) & 0x000000ff;
 	}
 }
 
