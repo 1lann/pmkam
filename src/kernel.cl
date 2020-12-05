@@ -11,24 +11,10 @@ typedef union UINT {
     uchar c[4];
 } UINT;
 
-#ifdef __ENDIAN_LITTLE__
-    #define UINT_BYTE_BE(U, I) ((U).c[3 - (I)])
-#else
-    #define UINT_BYTE_BE(U, I) ((U).c[(I)])
-#endif
-
 // right rotate macro
 #define RR(x, y) rotate((uint)(x), -((uint)(y)))
 
-// sha256 macros
-#define CH(x, y, z) bitselect((z), (y), (x))
-#define MAJ(x, y, z) bitselect((x), (y), (z) ^ (x))
-#define EP0(x) (RR((x), 2) ^ RR((x), 13) ^ RR((x), 22))
-#define EP1(x) (RR((x), 6) ^ RR((x), 11) ^ RR((x), 25))
-#define SIG0(x) (RR((x), 7) ^ RR((x), 18) ^ ((x) >> 3))
-#define SIG1(x) (RR((x), 17) ^ RR((x), 19) ^ ((x) >> 10))
-
-// sha256 initial hash values
+// initial hash values
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
 #define H2 0x3c6ef372
@@ -38,30 +24,147 @@ typedef union UINT {
 #define H6 0x1f83d9ab
 #define H7 0x5be0cd19
 
-// sha256 round constants
-__constant uint K[64] = {
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-};
+// sha256 macros
+#define CH(x,y,z) bitselect((z),(y),(x))
+#define MAJ(x,y,z) bitselect((x),(y),(z)^(x))
+#define EP0(x) (RR((x),2) ^ RR((x),13) ^ RR((x),22))
+#define EP1(x) (RR((x),6) ^ RR((x),11) ^ RR((x),25))
+#define SIG0(x) (RR((x),7) ^ RR((x),18) ^ ((x) >> 3))
+#define SIG1(x) (RR((x),17) ^ RR((x),19) ^ ((x) >> 10))
 
-// sha256 round constants added to a precomputed schedule of
-// the second block from a 64-byte message
-__constant uint K2[64] = {
-    0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf374,
-    0x649b69c1, 0xf0fe4786, 0x0fe1edc6, 0x240cf254, 0x4fe9346f, 0x6cc984be, 0x61b9411e, 0x16f988fa,
-    0xf2c65152, 0xa88e5a6d, 0xb019fc65, 0xb9d99ec7, 0x9a1231c3, 0xe70eeaa0, 0xfdb1232b, 0xc7353eb0,
-    0x3069bad5, 0xcb976d5f, 0x5a0f118f, 0xdc1eeefd, 0x0a35b689, 0xde0b7a04, 0x58f4ca9d, 0xe15d5b16,
-    0x007f3e86, 0x37088980, 0xa507ea32, 0x6fab9537, 0x17406110, 0x0d8cd6f1, 0xcdaa3b6d, 0xc0bbbe37,
-    0x83613bda, 0xdb48a363, 0x0b02e931, 0x6fd15ca7, 0x521afaca, 0x31338431, 0x6ed41a95, 0x6d437890,
-    0xc39c91f2, 0x9eccabbd, 0xb5c9a0e6, 0x532fb63c, 0xd2c741c6, 0x07237ea3, 0xa4954b68, 0x4c191d76
-};
+__constant uint K[64] = {
+	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+	0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+	0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+	0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+	0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+	0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
+
+// precomputed message block for second transformation round in second sha256 for sha256(sha256(x))
+__constant uint STATICM[64] = {
+	2147483648, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 512,
+	2147483648, 20971520, 2117632, 20616, 570427392, 575995924, 84449090,
+	2684354592, 1518862336, 6067200, 1496221, 4202700544, 3543279056,
+	291985753, 4142317530, 3003913545, 145928272, 2642168871, 216179603, 2296832490,
+	2771075893, 1738633033, 3610378607, 1324035729, 1572820453, 2397971253, 3803995842,
+	2822718356, 1168996599, 921948365, 3650881000, 2958106055, 1773959876, 3172022107,
+	3820646885, 991993842, 419360279, 3797604839, 322392134, 85264541, 1326255876,
+	640108622, 822159570, 3328750644, 1107837388, 1657999800, 3852183409, 2242356356 };
+
+// precomputed message block conversions for sha256(hex)
+__constant ushort DATA_TO_HEX_TO_M[256] = {
+	12336, 12337, 12338, 12339, 12340, 12341, 12342, 12343, 12344, 12345, 12385, 12386,
+	12387, 12388, 12389, 12390, 12592, 12593, 12594, 12595, 12596, 12597, 12598, 12599,
+	12600, 12601, 12641, 12642, 12643, 12644, 12645, 12646, 12848, 12849, 12850, 12851,
+	12852, 12853, 12854, 12855, 12856, 12857, 12897, 12898, 12899, 12900, 12901, 12902,
+	13104, 13105, 13106, 13107, 13108, 13109, 13110, 13111, 13112, 13113, 13153, 13154,
+	13155, 13156, 13157, 13158, 13360, 13361, 13362, 13363, 13364, 13365, 13366, 13367,
+	13368, 13369, 13409, 13410, 13411, 13412, 13413, 13414, 13616, 13617, 13618, 13619,
+	13620, 13621, 13622, 13623, 13624, 13625, 13665, 13666, 13667, 13668, 13669, 13670,
+	13872, 13873, 13874, 13875, 13876, 13877, 13878, 13879, 13880, 13881, 13921, 13922,
+	13923, 13924, 13925, 13926, 14128, 14129, 14130, 14131, 14132, 14133, 14134, 14135,
+	14136, 14137, 14177, 14178, 14179, 14180, 14181, 14182, 14384, 14385, 14386, 14387,
+	14388, 14389, 14390, 14391, 14392, 14393, 14433, 14434, 14435, 14436, 14437, 14438,
+	14640, 14641, 14642, 14643, 14644, 14645, 14646, 14647, 14648, 14649, 14689, 14690,
+	14691, 14692, 14693, 14694, 24880, 24881, 24882, 24883, 24884, 24885, 24886, 24887,
+	24888, 24889, 24929, 24930, 24931, 24932, 24933, 24934, 25136, 25137, 25138, 25139,
+	25140, 25141, 25142, 25143, 25144, 25145, 25185, 25186, 25187, 25188, 25189, 25190,
+	25392, 25393, 25394, 25395, 25396, 25397, 25398, 25399, 25400, 25401, 25441, 25442,
+	25443, 25444, 25445, 25446, 25648, 25649, 25650, 25651, 25652, 25653, 25654, 25655,
+	25656, 25657, 25697, 25698, 25699, 25700, 25701, 25702, 25904, 25905, 25906, 25907,
+	25908, 25909, 25910, 25911, 25912, 25913, 25953, 25954, 25955, 25956, 25957, 25958,
+	26160, 26161, 26162, 26163, 26164, 26165, 26166, 26167, 26168, 26169, 26209, 26210,
+	26211, 26212, 26213, 26214 };
+
+// params: raw data whose length must be exactly 32 bytes, and output H
+// what it does: sha256_transform(sha256_transform(hex(data)))
+void sha256_digest_transform(uchar data[32], UINT H[8]) {
+	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
+
+#pragma unroll
+	for (i = 0; i < 16; i++) {
+		// convert the raw bytes, straight to M, skipping the conversion to hex
+		// because it has already been precomputed.
+		m[i] = upsample(DATA_TO_HEX_TO_M[data[i * 2]], DATA_TO_HEX_TO_M[data[i * 2 + 1]]);
+	}
+
+#pragma unroll
+	for (i = 16; i < 64; i++) {
+		m[i] = SIG1(m[i-2]) + m[i-7] + SIG0(m[i-15]) + m[i-16];
+	}
+
+	a = H0;
+	b = H1;
+	c = H2;
+	d = H3;
+	e = H4;
+	f = H5;
+	g = H6;
+	h = H7;
+
+#pragma unroll
+	for (i = 0; i < 64; i++) {
+		t1 = h + EP1(e) + CH(e, f, g) + K[i] + m[i];
+		t2 = EP0(a) + MAJ(a, b, c);
+		h = g;
+		g = f;
+		f = e;
+		e = d + t1;
+		d = c;
+		c = b;
+		b = a;
+		a = t1 + t2;
+	}
+
+	a += H0;
+	b += H1;
+	c += H2;
+	d += H3;
+	e += H4;
+	f += H5;
+	g += H6;
+	h += H7;
+
+	H[0] = a;
+	H[1] = b;
+	H[2] = c;
+	H[3] = d;
+	H[4] = e;
+	H[5] = f;
+	H[6] = g;
+	H[7] = h;
+
+	// Typically you return here.
+	// However since the input is virtually 64 bytes, there is a second
+	// transform. We flatten the implementation of this second transform,
+	// also since the second 64-chunk of data is identical,
+	// we can pre-compute the M values, which is what STATICM contains.
+
+#pragma unroll
+	for (i = 0; i < 64; i++) {
+		t1 = h + EP1(e) + CH(e, f, g) + K[i] + STATICM[i];
+		t2 = EP0(a) + MAJ(a, b, c);
+		h = g;
+		g = f;
+		f = e;
+		e = d + t1;
+		d = c;
+		c = b;
+		b = a;
+		a = t1 + t2;
+	}
+
+	H[0] += a;
+	H[1] += b;
+	H[2] += c;
+	H[3] += d;
+	H[4] += e;
+	H[5] += f;
+	H[6] += g;
+	H[7] += h;
+}
 
 // perform a single round of sha256 transformation on the given data
 inline void sha256_transform(UINT m[64], UINT H[8]) {
@@ -168,6 +271,40 @@ inline void digest64(UINT data[64], UINT hash[8]) {
     sha256_transform2(hash);
 }
 
+void sha256_finish(UINT H[8], uchar hash[32]) {
+	int i, l;
+
+#pragma unroll
+	for (i = 0; i < 4; i++) {
+		l = 24 - i * 8;
+		hash[i]      = (H[0] >> l) & 0x000000ff;
+		hash[i + 4]  = (H[1] >> l) & 0x000000ff;
+		hash[i + 8]  = (H[2] >> l) & 0x000000ff;
+		hash[i + 12] = (H[3] >> l) & 0x000000ff;
+		hash[i + 16] = (H[4] >> l) & 0x000000ff;
+		hash[i + 20] = (H[5] >> l) & 0x000000ff;
+		hash[i + 24] = (H[6] >> l) & 0x000000ff;
+		hash[i + 28] = (H[7] >> l) & 0x000000ff;
+	}
+}
+
+void digest_wrapper(UINT data[8], UINT hash[8]) {
+    uchar output[32];
+
+    sha256_finish(data, output);
+
+    hash[0].i = H0;
+    hash[1].i = H1;
+    hash[2].i = H2;
+    hash[3].i = H3;
+    hash[4].i = H4;
+    hash[5].i = H5;
+    hash[6].i = H6;
+    hash[7].i = H7;
+
+    sha256_digest_transform(output, hash);
+}
+
 // Address miner
 
 #define THREAD_ITER 4096 // How many addresses each work unit checks
@@ -175,38 +312,6 @@ inline void digest64(UINT data[64], UINT hash[8]) {
 #define MAX_CHAIN_ITER 16 // The max amout of iterations the check_address function does before giving up.
                           // Must not be greater than CHAIN_SIZE / 8. (otherwise false positives will happen without any other benefit).
                           // A max chain iter of n means a failure probability of at most (7/9)^n per address checked.
-
-// Converts a sha256 hash to hexadecimal
-inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {    
-#pragma unroll
-    for (int i = 0; i < 16; i += 2) {
-        uchar h, h1, h2;
-
-        h = UINT_BYTE_BE(hash[i / 2], 0);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 1);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 2);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-        h = UINT_BYTE_BE(hash[i / 2], 3);
-        h1 = h % 16;
-        h2 = h / 16;
-        UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-        UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-    }
-}
 
 // Converts a byte to the one used by the trie
 // byte | krist | trie_char
@@ -261,8 +366,7 @@ typedef struct HASH_CHAIN_T {
 // - Writes the first 8 bytes from last_hash to the chain buffer.
 inline void shift_chain(HASH_CHAIN_T *chain) {
     UINT hash_hex[64];
-    hash_to_hex(chain->last_hash, hash_hex);
-    digest64(hash_hex, chain->last_hash);
+    digest_wrapper(chain->last_hash, chain->last_hash);
 
     chain->protein[chain->protein_start] = make_address_byte_s(
         chain->chain[chain->chain_start]
@@ -356,7 +460,7 @@ __kernel void mine(
     uint gid_seed = gid;
     ulong nonce_seed = nonce;
     UINT seed[64] = {};
-    
+
     for (int i = 0; i < 10; i++) {
         UINT_BYTE_BE(seed[i / 4], i % 4) = entropy[i];
     }
@@ -365,6 +469,7 @@ __kernel void mine(
     seed[5].i = nonce_seed / UINT_MAX;
 
     UINT seed_hash[8];
+
     digest64(seed, seed_hash);
 
     // Make chain and protein
