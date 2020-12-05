@@ -39,7 +39,7 @@ typedef union UINT {
 #define H7 0x5be0cd19
 
 // sha256 round constants
-__constant uint K[64] = {
+__local uint K[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -52,7 +52,7 @@ __constant uint K[64] = {
 
 // sha256 round constants added to a precomputed schedule of
 // the second block from a 64-byte message
-__constant uint K2[64] = {
+__local uint K2[64] = {
     0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf374,
     0x649b69c1, 0xf0fe4786, 0x0fe1edc6, 0x240cf254, 0x4fe9346f, 0x6cc984be, 0x61b9411e, 0x16f988fa,
@@ -150,7 +150,7 @@ inline void digest64(UINT m[64], UINT H[8]) {
                           // A max chain iter of n means a failure probability of at most (7/9)^n per address checked.
 
 // precomputed message block conversions for sha256(hex)
-__shared ushort DATA_TO_HEX_TO_M[256] = {
+__local ushort DATA_TO_HEX_TO_M[256] = {
 	12336, 12337, 12338, 12339, 12340, 12341, 12342, 12343, 12344, 12345, 12385, 12386,
 	12387, 12388, 12389, 12390, 12592, 12593, 12594, 12595, 12596, 12597, 12598, 12599,
 	12600, 12601, 12641, 12642, 12643, 12644, 12645, 12646, 12848, 12849, 12850, 12851,
