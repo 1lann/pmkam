@@ -176,41 +176,42 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 
 // Converts a sha256 hash to hexadecimal
 inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
+// #pragma unroll
+// 	for (int i = 0; i < 8; i++) {
+// 		// convert the raw bytes, straight to M, skipping the conversion to hex
+// 		// because it has already been precomputed.
+//         hex[i * 2].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
+//         hex[i * 2 + 1].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
+// 	}
+
 #pragma unroll
-	for (int i = 0; i < 8; i++) {
-		// convert the raw bytes, straight to M, skipping the conversion to hex
-		// because it has already been precomputed.
-        hex[i * 2].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
-        hex[i * 2 + 1].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
-	}
+    for (int i = 0; i < 16; i += 2) {
+        uchar h, h1, h2;
 
-    // for (int i = 0; i < 16; i += 2) {
-    //     uchar h, h1, h2;
+        h = UINT_BYTE_BE(hash[i / 2], 0);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-    //     h = UINT_BYTE_BE(hash[i / 2], 0);
-    //     h1 = h % 16;
-    //     h2 = h / 16;
-    //     UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-    //     UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+        h = UINT_BYTE_BE(hash[i / 2], 1);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-    //     h = UINT_BYTE_BE(hash[i / 2], 1);
-    //     h1 = h % 16;
-    //     h2 = h / 16;
-    //     UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-    //     UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+        h = UINT_BYTE_BE(hash[i / 2], 2);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
 
-    //     h = UINT_BYTE_BE(hash[i / 2], 2);
-    //     h1 = h % 16;
-    //     h2 = h / 16;
-    //     UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-    //     UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-
-    //     h = UINT_BYTE_BE(hash[i / 2], 3);
-    //     h1 = h % 16;
-    //     h2 = h / 16;
-    //     UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
-    //     UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
-    // }
+        h = UINT_BYTE_BE(hash[i / 2], 3);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+    }
 }
 
 // Converts a byte to the one used by the trie
