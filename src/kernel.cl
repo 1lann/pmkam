@@ -180,8 +180,8 @@ inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
 	for (int i = 0; i < 8; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-        hex[i * 2] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
-        hex[i * 2 + 1] = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
+        hex[i * 2].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
+        hex[i * 2 + 1].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
 	}
 
     // for (int i = 0; i < 16; i += 2) {
