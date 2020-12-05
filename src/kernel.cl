@@ -98,14 +98,16 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 
 // params: raw data whose length must be exactly 32 bytes, and output H
 // what it does: sha256_transform(sha256_transform(hex(data)))
-void sha256_digest_transform(UINT data[8], UINT H[8]) {
+inline void sha256_digest_transform(UINT data[8], UINT H[8]) {
 	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
 
 #pragma unroll
 	for (i = 0; i < 16; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
-        m[i] = upsample(upsample(UINT_BYTE_BE(data[i >> 1], 0), UINT_BYTE_BE(data[i >> 1], 1)), upsample(UINT_BYTE_BE(data[i >> 1], 2), UINT_BYTE_BE(data[i >> 1], 3)));
+        m[i] = upsample(
+            DATA_TO_HEX_TO_M[upsample(UINT_BYTE_BE(data[i >> 1], 0), UINT_BYTE_BE(data[i >> 1], 1))],
+            DATA_TO_HEX_TO_M[upsample(UINT_BYTE_BE(data[i >> 1], 2), UINT_BYTE_BE(data[i >> 1], 3))]);
 	}
 
 #pragma unroll
@@ -338,10 +340,6 @@ inline void sha256_finish(UINT H[8], uchar hash[32]) {
 }
 
 inline void digest_wrapper(UINT data[8], UINT hash[8]) {
-    uchar output[32];
-
-    sha256_finish(data, output);
-
     hash[0].i = H0;
     hash[1].i = H1;
     hash[2].i = H2;
@@ -351,7 +349,7 @@ inline void digest_wrapper(UINT data[8], UINT hash[8]) {
     hash[6].i = H6;
     hash[7].i = H7;
 
-    sha256_digest_transform(output, hash);
+    sha256_digest_transform(data, hash);
 }
 
 // Address miner
