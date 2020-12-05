@@ -176,14 +176,7 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 
 // Converts a sha256 hash to hexadecimal
 inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
-// #pragma unroll
-// 	for (int i = 0; i < 8; i++) {
-// 		// convert the raw bytes, straight to M, skipping the conversion to hex
-// 		// because it has already been precomputed.
-//         hex[i * 2].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
-//         hex[i * 2 + 1].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
-// 	}
-
+#ifdef __NV_CL_C_VERSION
 #pragma unroll
     for (int i = 0; i < 16; i += 2) {
         uchar h, h1, h2;
@@ -212,6 +205,15 @@ inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
         UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
         UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
     }
+#else
+#pragma unroll
+	for (int i = 0; i < 8; i++) {
+		// convert the raw bytes, straight to M, skipping the conversion to hex
+		// because it has already been precomputed.
+        hex[i * 2].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 0)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 1)]);
+        hex[i * 2 + 1].i = upsample(DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 2)], DATA_TO_HEX_TO_M[UINT_BYTE_BE(hash[i], 3)]);
+	}
+#endif
 }
 
 // Converts a byte to the one used by the trie
