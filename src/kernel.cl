@@ -344,7 +344,7 @@ inline void digest_wrapper(UINT data[8], UINT hash[8]) {
 
 // Address miner
 
-#define THREAD_ITER 16384 // How many addresses each work unit checks
+#define THREAD_ITER 2048 // How many addresses each work unit checks
 #define CHAIN_SIZE (16 * 8) // 16 stored iterations with 8 bytes each
 #define MAX_CHAIN_ITER 16 // The max amout of iterations the check_address function does before giving up.
                           // Must not be greater than CHAIN_SIZE / 8. (otherwise false positives will happen without any other benefit).
