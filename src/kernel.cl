@@ -339,14 +339,7 @@ inline void sha256_finish(UINT H[8], uchar hash[32]) {
 }
 
 inline void digest_wrapper(UINT data[8], UINT hash[8]) {
-    hash[0].i = H0;
-    hash[1].i = H1;
-    hash[2].i = H2;
-    hash[3].i = H3;
-    hash[4].i = H4;
-    hash[5].i = H5;
-    hash[6].i = H6;
-    hash[7].i = H7;
+    UINT cp[8];
 
     sha256_digest_transform(data, hash);
 }
