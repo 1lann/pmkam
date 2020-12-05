@@ -397,7 +397,7 @@ typedef struct HASH_CHAIN_T {
 // - Writes the address byte from the first byte from the chain buffer to the
 //   protein buffer.
 // - Writes the first 8 bytes from last_hash to the chain buffer.
-inline void shift_chain(HASH_CHAIN_T *chain) {
+void shift_chain(HASH_CHAIN_T *chain) {
     sha256_digest_transform(chain->last_hash);
 
     chain->protein[chain->protein_start] = make_address_byte_s(
