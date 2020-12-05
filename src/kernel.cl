@@ -11,6 +11,13 @@ typedef union UINT {
     uchar c[4];
 } UINT;
 
+#ifdef __ENDIAN_LITTLE__
+    #define UINT_BYTE_BE(U, I) ((U).c[3 - (I)])
+#else
+    #define UINT_BYTE_BE(U, I) ((U).c[(I)])
+#endif
+
+
 // right rotate macro
 #define RR(x, y) rotate((uint)(x), -((uint)(y)))
 
@@ -41,6 +48,17 @@ __constant uint K[64] = {
 	0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
 	0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
 	0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
+
+__constant uint K2[64] = {
+    0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf374,
+    0x649b69c1, 0xf0fe4786, 0x0fe1edc6, 0x240cf254, 0x4fe9346f, 0x6cc984be, 0x61b9411e, 0x16f988fa,
+    0xf2c65152, 0xa88e5a6d, 0xb019fc65, 0xb9d99ec7, 0x9a1231c3, 0xe70eeaa0, 0xfdb1232b, 0xc7353eb0,
+    0x3069bad5, 0xcb976d5f, 0x5a0f118f, 0xdc1eeefd, 0x0a35b689, 0xde0b7a04, 0x58f4ca9d, 0xe15d5b16,
+    0x007f3e86, 0x37088980, 0xa507ea32, 0x6fab9537, 0x17406110, 0x0d8cd6f1, 0xcdaa3b6d, 0xc0bbbe37,
+    0x83613bda, 0xdb48a363, 0x0b02e931, 0x6fd15ca7, 0x521afaca, 0x31338431, 0x6ed41a95, 0x6d437890,
+    0xc39c91f2, 0x9eccabbd, 0xb5c9a0e6, 0x532fb63c, 0xd2c741c6, 0x07237ea3, 0xa4954b68, 0x4c191d76
+};
 
 // precomputed message block for second transformation round in second sha256 for sha256(sha256(x))
 __constant uint STATICM[64] = {
@@ -83,7 +101,7 @@ __constant ushort DATA_TO_HEX_TO_M[256] = {
 void sha256_digest_transform(uchar data[32], UINT H[8]) {
 	uint a, b, c, d, e, f, g, h, i, t1, t2, m[64];
 
-#pragma unroll
+#pragma unrollUNIT
 	for (i = 0; i < 16; i++) {
 		// convert the raw bytes, straight to M, skipping the conversion to hex
 		// because it has already been precomputed.
@@ -251,6 +269,37 @@ inline void sha256_transform2(UINT H[8]) {
     H[7].i += h;
 }
 
+inline void hash_to_hex(const UINT hash[8], UINT hex[64]) {
+#pragma unroll
+    for (int i = 0; i < 16; i += 2) {
+        uchar h, h1, h2;
+
+        h = UINT_BYTE_BE(hash[i / 2], 0);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+
+        h = UINT_BYTE_BE(hash[i / 2], 1);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+
+        h = UINT_BYTE_BE(hash[i / 2], 2);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i + 1], 1) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i + 1], 0) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+
+        h = UINT_BYTE_BE(hash[i / 2], 3);
+        h1 = h % 16;
+        h2 = h / 16;
+        UINT_BYTE_BE(hex[i + 1], 3) = h1 + (h1 < 10 ? '0' : 'a' - 10);
+        UINT_BYTE_BE(hex[i + 1], 2) = h2 + (h2 < 10 ? '0' : 'a' - 10);
+    }
+}
+
 // sha256 digest of exactly 64 bytes of input
 // UINT data[64] - input bytes - will be modified
 // UINT hash[8] - output bytes - will be modified
@@ -277,14 +326,14 @@ void sha256_finish(UINT H[8], uchar hash[32]) {
 #pragma unroll
 	for (i = 0; i < 4; i++) {
 		l = 24 - i * 8;
-		hash[i].i      = (H[0].i >> l) & 0x000000ff;
-		hash[i + 4].i  = (H[1].i >> l) & 0x000000ff;
-		hash[i + 8].i  = (H[2].i >> l) & 0x000000ff;
-		hash[i + 12].i = (H[3].i >> l) & 0x000000ff;
-		hash[i + 16].i = (H[4].i >> l) & 0x000000ff;
-		hash[i + 20].i = (H[5].i >> l) & 0x000000ff;
-		hash[i + 24].i = (H[6].i >> l) & 0x000000ff;
-		hash[i + 28].i = (H[7].i >> l) & 0x000000ff;
+		hash[i]      = (H[0].i >> l) & 0x000000ff;
+		hash[i + 4]  = (H[1].i >> l) & 0x000000ff;
+		hash[i + 8]  = (H[2].i >> l) & 0x000000ff;
+		hash[i + 12] = (H[3].i >> l) & 0x000000ff;
+		hash[i + 16] = (H[4].i >> l) & 0x000000ff;
+		hash[i + 20] = (H[5].i >> l) & 0x000000ff;
+		hash[i + 24] = (H[6].i >> l) & 0x000000ff;
+		hash[i + 28] = (H[7].i >> l) & 0x000000ff;
 	}
 }
 
